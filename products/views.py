@@ -105,11 +105,8 @@ def cart_count(request):
     token = request.headers.get('Authorization')
     user = Token.objects.get(key=token[6:]).user
     order_qs = Order.objects.get(user=user,ordered=False)
-    try:
-        count = order_qs.items.count()
-        return Response({"count":count}) 
-    except ObjectDoesNotExist:
-        return Response({"message":"No Cart items"}) 
+    count = order_qs.items.count()
+    return Response({"count":count})
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
@@ -413,15 +410,15 @@ def profile(request):
         name = request.POST.get('name')
         email = request.POST.get('email')
         mobile_number = request.POST.get('mobile')
-        image = request.data['image']
+        # image = request.data['image']
         token = request.headers.get('Authorization')
         user = Token.objects.get(key=token[6:]).user
         profile = Profile.objects.get(user=user)
-        main_user = User.objects.get(user=user)
+        main_user = User.objects.get(username=user.username)
         profile.email = email
         profile.name = name
         profile.mobile_number = mobile_number
-        profile.profile_image = image
+        # profile.profile_image = image
         profile.save()
         main_user.first_name = name
         main_user.email = email

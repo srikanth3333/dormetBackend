@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
 from rest_framework.authtoken.models import Token
+from products.models import Products
+from products.serializers import ProductSerializer
+from django.db.models import Q
 
 # Views
 @api_view(['POST'])
@@ -21,9 +24,27 @@ def add_category(request):
     
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
 def get_categories(request):
     categories = Category.objects.all()
     serializer = CategorySerializer(categories, many=True)
-    return Response({"categories":serializer.data})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def get_category_products(request,pk):
+    products = Products.objects.filter(shop__id=pk)
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def search_products(request):
+    search_text = request.GET.get('q')
+    # offer_price
+    # tag_name
+    # category
+    # products_description
+    products = Products.objects.filter(Q(product_name__icontains=search_text) | Q(price__icontains=search_text ))
+    print(products)
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data)
