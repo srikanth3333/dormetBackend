@@ -12,8 +12,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from customers.models import Profile
 from django.contrib.auth.models import User
 
+        
 
-# Create your views here.
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -141,6 +142,7 @@ def add_to_cart(request):
                 return Response({"message":"Added New Product From Same Shop"})
     else:
         ordered_date = timezone.now()
+        print(ordered_date)
         order = Order.objects.create(user=user,start_date=ordered_date)
         order.items.add(order_item)
         return Response({"message":"Item Added  to cart"})
@@ -477,3 +479,37 @@ def favourites(request):
         return Response({"msg":"Removed from favourite"})
 
     return Response("Wrong Method")
+
+
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def get_count_retailer(request):
+    profiles = Profile.objects.all().count()
+    token = request.headers.get('Authorization')
+    user = Token.objects.get(key=token[6:]).user
+    shop = Shops.objects.get(user=user)
+    orders = OrderedItem.objects.filter(shop=shop,ordered=True)
+    all_orders = Order.objects.filter(shop=shop,ordered=True).count()
+    orders_done = Order.objects.filter(shop=shop,ordered=True, being_delivered=True).count()
+    orders_progress = Order.objects.filter(shop=shop,ordered=True,being_delivered=False).count()
+    total = 0
+    for i in orders:
+        total += i.item.offer_price
+    return Response({"users":profiles,"sales":total,"progress":orders_progress,"delivered":orders_done,"total_orders":all_orders})
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def recent_orders(request):
+    status = request.POST.get('status')
+    print(status)
+    token = request.headers.get('Authorization')
+    user = Token.objects.get(key=token[6:]).user
+    shop = Shops.objects.get(user=user)
+    orders = Order.objects.filter(shop=shop,ordered=True,being_delivered=status,user=user).order_by('-start_date')
+    serializer = OrderSerializer(orders, many=True)
+    return Response(serializer.data)

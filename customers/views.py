@@ -5,7 +5,26 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from .models import Profile
 from django.contrib.auth.models import User
+import os
+from twilio.rest import Client
 
+# Find these values at https://twilio.com/user/account
+# To set up environmental variables, see http://twil.io/secure
+account_sid = 'AC1e43cfeea46379c2f8fbd83ea39d336c'
+auth_token = 'c569ee15f7e4277e27bdc5de94ad5562'
+
+def send_otp(mobile, otp):
+    try:
+        client = Client(account_sid, auth_token)
+        client.api.account.messages.create(
+            to="+919391962924",
+            from_="+14786072077",
+            body="Message from dormet your otp is {}".format(otp))
+        print(client)
+    except:
+        print("Something went wrong")
+    
+    return 
 # Create your views here.
 @api_view(['GET'])
 def home(request):
@@ -32,6 +51,7 @@ def account_login(request):
         mobile = request.POST.get('mobile')
         if(mobile != ''): 
             otp = int(random.randint(1000,9999))
+            send_otp(mobile, otp)
             check_user = Profile.objects.filter(mobile_number=mobile)
             if check_user:
                 exists_user = Profile.objects.get(mobile_number=mobile)
